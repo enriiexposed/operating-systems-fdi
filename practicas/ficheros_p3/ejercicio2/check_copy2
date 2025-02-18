@@ -1,0 +1,72 @@
+#!/bin/bash
+
+function usage {
+	echo Usage: $0
+}
+
+if [ $# -gt 0 ]; then
+	usage && exit -1
+fi
+
+if [ ! -f copy2.c ]; then
+	echo "error: no copy.c file"
+	exit -1;
+fi
+
+for f in fread fwrite fopen fclose;
+do
+	if grep $f copy2.c > /dev/null; then
+		echo "error: using $f"
+		exit -1
+	fi
+done
+
+for f in "read" write open close readlink symlink;
+do
+	if ! grep $f copy2.c > /dev/null; then
+		echo "error: not using $f"
+		exit -1
+	fi
+done
+
+if ! make > /dev/null; then
+	echo "error: compiling errors"
+	exit -1;
+fi
+
+./copy2 copy2.c copy_copy2.c
+
+if ! diff copy2.c copy_copy2.c; then
+	echo "error: copy file differs from original"
+	exit -1
+fi
+
+head -c 8000 /dev/urandom > data_file.bin
+./copy2 data_file.bin data_file_copy.bin
+if ! diff data_file.bin data_file_copy.bin; then
+	echo "error: copy large file differs from original"
+	exit -1;
+fi
+
+ln -s copy2.c link_copy2
+./copy2 link_copy2 link_copy2_copy
+if [ ! -L link_copy2_copy ]; then
+	echo "error: copy file is not a symbolic link"
+	exit -1;
+fi
+
+if [ $(readlink link_copy2) != $(readlink link_copy2_copy) ]; then
+	echo "error: copy link does not link to the same file"
+	exit -1;
+fi
+
+echo "Everything seems ok!"
+
+rm link_copy2 link_copy2_copy
+rm data_file.bin data_file_copy.bin
+rm copy_copy2.c
+make clean > /dev/null
+
+exit 0
+
+
