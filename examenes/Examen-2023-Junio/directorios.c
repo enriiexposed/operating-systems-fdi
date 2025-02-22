@@ -17,7 +17,7 @@ void get_entries_of_dir(char* dirname) {
     if (!dir)
     {
         perror("No se ha podido abrir el archivo");
-        return -1;
+        return;
     }
 
     printf("%s:\n", dirname);
@@ -25,17 +25,28 @@ void get_entries_of_dir(char* dirname) {
         printf("%s\n", next_dir->d_name);
     }
 
+    printf("\n");
+    rewinddir(dir);
+
+    // print all entries
     while ((next_dir = readdir(dir)) != NULL) {
-        if (sb.st_mode & __S_IFMT == __S_IFDIR) {
-            if (!strcmp(".", next_dir->d_name) && !strcmp("..", next_dir->d_name)) {
+        if (next_dir->d_type == DT_DIR) {
+            if (strcmp(".", next_dir->d_name) != 0 && strcmp("..", next_dir->d_name) != 0) {
+                char path[PATH_MAX];
+                snprintf(path, sizeof(path), "%s/%s", dirname, next_dir->d_name);
                 pid_t pid = fork();
                 if (pid == 0) {
-                    get_entries_of_dir(next_dir->d_name);
+                    get_entries_of_dir(path);
+                    exit(0);
                 }
                 while (wait(NULL) != -1);
             }
         }
     }
+
+    closedir(dir);
+
+    // for every sub-directory, print all directories inside of him
 }
 
 
