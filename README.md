@@ -5,7 +5,7 @@ Sirve para alumnos tanto de Informática, Computadores y Software que cursen est
 
 
 
-> [WARNING]
+> [!WARNING]
 > Seguramente no veas el mejor codigo de resolucion para algunos de los exámenes, se aceptan requests por supuesto:)
 
 # Como ejecuto este codigo (RECOMENDACION)
