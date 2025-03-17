@@ -14,15 +14,16 @@ char *VIPSTR (int isvip) {
 	}
 }
 
-struct tharg
-{
+struct tharg {
 	int id;
 	int vip;
 };
+
 int turn = 0, turn_vip = 0, turn_special = 0;
 int ticket = 0, ticket_vip = 0, ticket_special = 0;
 int nclients = 0, vip_waiting = 0, special_waiting = 0;
 int nspecials = 0;
+
 pthread_mutex_t m;
 pthread_cond_t queue, queue_vip, queue_special;
 void enter_normal_client(int id)
@@ -108,14 +109,12 @@ void disco_exit(int id, int isvip)
 void *client(void *arg)
 {
 	struct tharg *tharg = (struct tharg *)arg;
-	if (tharg->vip == 1)
-	{
+	if (tharg->vip == 1) {
 		enter_vip_client(tharg->id);
 	}
-	else if (tharg->vip == 0)
-	{
+	else if (tharg->vip == 0) {
 		enter_normal_client(tharg->id);
-	} else{
+	} else {
 		enter_special_client(tharg->id);
 	}
 	dance(tharg->id, tharg->vip);
@@ -128,11 +127,14 @@ int main(int argc, char *argv[])
 	pthread_attr_t attr;
 	char *filename;
 	int vip;
-	if (argc != 2)
-	{
+	// Compruebo los argumentos por consola
+	if (argc != 2) {
 		perror("Número de argumentos inválido");
 		exit(EXIT_FAILURE);
 	}
+
+
+	// Abro el fichero y lo leo
 	filename = argv[1];
 	FILE *file = fopen(filename, "r");
 	if (file == NULL)
@@ -141,18 +143,21 @@ int main(int argc, char *argv[])
 		exit(EXIT_FAILURE);
 	}
 	fscanf(file, "%d ", &m);
+
+	// Creo los hilos
 	pthread_t *thid = malloc(sizeof(pthread_t) * m);
 	pthread_attr_init(&attr);
-	for (j = 0; j < m; j++)
-	{
+	for (j = 0; j < m; j++) {
+		// Argumentos del hilo
 		struct tharg *args = malloc(sizeof(struct tharg));
-		if (args == NULL)
-		{
+		if (args == NULL) {
 			perror("Error malloc");
 			fclose(file);
 			exit(EXIT_FAILURE);
 		}
 		args->id = j;
+
+		// Creacion del hilo
 		fscanf(file, "%d ", &vip);
 		args->vip = vip;
 		if (pthread_create(&thid[j], &attr, client, args) != 0)
@@ -164,6 +169,7 @@ int main(int argc, char *argv[])
 		}
 	}
 	fclose(file);
+
 	for (j = 0; j < m; j++)
 	{
 		pthread_join(thid[j], NULL);

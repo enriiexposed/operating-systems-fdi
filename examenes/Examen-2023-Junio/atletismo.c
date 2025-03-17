@@ -73,6 +73,9 @@ void pass_on_relay(int id) {
 void *thmain(void *arg) {
     int id = *(int*) arg;
     int pos;
+
+    usleep(rand() % 1000);
+
     change_clothes(id);
     pos = get_position(id);
     move_position(id, pos);

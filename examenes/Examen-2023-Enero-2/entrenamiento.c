@@ -39,8 +39,8 @@ void rebotear(struct jugador* jug) {
     }
 
     balon = POSESION;
+    printf("Reboteador con dorsal %d procede a correr\n", jug->dorsal);
     pthread_mutex_unlock(&mtx);
-    printf("Reboteador procede a correr\n");
 }
 
 void tirar(struct jugador* jug) {
@@ -57,12 +57,13 @@ void tirar(struct jugador* jug) {
         finished = 1;
         printf("Jugador ha llegado a los puntos\n");
     }
+    printf("El jugador con dorsal %d ha tirado a canasta\n", jug->dorsal);
     pthread_cond_broadcast(&enAire);
-    pthread_mutex_unlock(&mtx); 
+    pthread_mutex_unlock(&mtx);
 }
 
 void correr() {
-    usleep(100);
+    sleep(1);
 }
 
 void* jugadorInit(void* args) {
@@ -82,6 +83,7 @@ void* jugadorInit(void* args) {
         tirar(jug);
         correr();
     }
+
     return NULL;
 }
 
