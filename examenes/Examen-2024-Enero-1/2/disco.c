@@ -3,18 +3,9 @@
 #include <unistd.h>
 #include <pthread.h>
 #define CAPACITY 3
-
-char *VIPSTR (int isvip) {
-	if (isvip == 2) {
-		return "special";
-	} else if (isvip == 1) {
-		return "is vip";
-	} else {
-		return "not vip";
-	}
-}
-
-struct tharg {
+#define VIPSTR(vip) ((vip == 1) ? " vip " : (vip == 0) ? "not vip" : " special ")
+struct tharg
+{
 	int id;
 	int vip;
 };
@@ -25,40 +16,53 @@ int nclients = 0, vip_waiting = 0, special_waiting = 0;
 int nspecials = 0;
 
 pthread_mutex_t m;
-pthread_cond_t queue, queue_vip, queue_special;
-void enter_normal_client(int id)
-{
+pthread_cond_t queue, queue_vip, queue_specials;
+
+void enter_normal_client(int id) {
 	int my_turn;
 	pthread_mutex_lock(&m);
 	my_turn = ticket++;
-	while ((turn != my_turn) || (vip_waiting > 0) || (nspecials > 0) || (special_waiting > 0) || (nclients >= CAPACITY))
+	/**
+	 * Espera a que sea mi turno, no hayan vips y la sala no este llena
+	 */
+	while ((turn != my_turn) || (vip_waiting > 0) || (special_waiting > 0) || (nclients >= CAPACITY) || (nclients - nspecials == 0))
 	{
 		pthread_cond_wait(&queue, &m);
 	}
 	nclients++;
 	turn++;
 	printf("Client %2d (not vip) enter disco\n", id);
-	if (vip_waiting > 0)
+	dance(id, 0);
+	if (special_waiting > 0) {
+		pthread_cond_broadcast(&queue_specials);
+	} else if (vip_waiting > 0)
 		pthread_cond_broadcast(&queue_vip);
 	else
 		pthread_cond_broadcast(&queue);
 	pthread_mutex_unlock(&m);
 }
-void enter_vip_client(int id)
-{
+
+void enter_vip_client(int id) {
 	int my_turn;
 	pthread_mutex_lock(&m);
 	my_turn = ticket_vip++;
 	vip_waiting++;
-	while ((turn_vip != my_turn) || (nclients >= CAPACITY) || (nspecials > 0) || (special_waiting > 0))
-	{
+	/**
+	 * 	Espera a que sea mi turno y a que no este llena la sala
+	 */
+	while ((turn_vip != my_turn) || (nclients >= CAPACITY) || (special_waiting > 0) || (nclients - nspecials == 0)) {
 		pthread_cond_wait(&queue_vip, &m);
 	}
+	nspecials++;
 	vip_waiting--;
 	nclients++;
 	turn_vip++;
 	printf("Client %2d (vip) enter disco\n", id);
-	if (vip_waiting > 0)
+	dance(id, 1);
+	if (special_waiting > 0) {
+		pthread_cond_broadcast(&queue_specials);
+	}
+	else if (vip_waiting > 0)
 		pthread_cond_broadcast(&queue_vip);
 	else
 		pthread_cond_broadcast(&queue);
@@ -66,19 +70,19 @@ void enter_vip_client(int id)
 }
 
 void enter_special_client(int id) {
-	int myturn;
+	int my_turn;
 	pthread_mutex_lock(&m);
-	myturn = ticket_special++;
 	special_waiting++;
-	while ((turn_special != myturn) || (nclients-nspecials > 0) || (nclients >= CAPACITY)) {
-		pthread_cond_wait(&queue_special, &m);
+	my_turn = ticket_special++;
+	while(turn_special != my_turn || (nclients >= CAPACITY) || (nclients - nspecials > 0)) {
+		pthread_cond_wait(&queue_specials, &m);
 	}
+	printf("Client special enters disco\n");
+	dance(id, 2);
+	special_waiting--;
 	nspecials++;
-	nclients++;
-	turn_vip++;
-	pthread_cond_broadcast(&queue_special);
-	printf("Client special %d is entering disco\n", myturn);
-	pthread_mutex_unlock(&m); 
+	turn_special++;
+	pthread_mutex_unlock(&m);
 }
 
 void dance(int id, int isvip)
@@ -89,35 +93,29 @@ void dance(int id, int isvip)
 void disco_exit(int id, int isvip)
 {
 	pthread_mutex_lock(&m);
+	if (isvip == 2) nspecials--;
 	nclients--;
-	nspecials -= (isvip == 2);
 	printf("Client %2d (%s) exit disco\n", id, VIPSTR(isvip));
 	if (special_waiting > 0) {
-		pthread_cond_broadcast(&queue_special);
-	} else {
-		if (vip_waiting > 0) {
-			pthread_cond_broadcast(&queue_vip);
-		}
-		else {
-			pthread_cond_broadcast(&queue);
-		}
-	}
-
-	
+		pthread_cond_broadcast(&queue_specials);
+	} else if (vip_waiting > 0)
+		pthread_cond_broadcast(&queue_vip);
+	else
+		pthread_cond_broadcast(&queue);
 	pthread_mutex_unlock(&m);
 }
 void *client(void *arg)
 {
 	struct tharg *tharg = (struct tharg *)arg;
-	if (tharg->vip == 1) {
+	if (tharg->vip == 1)
+	{
 		enter_vip_client(tharg->id);
 	}
-	else if (tharg->vip == 0) {
+	else if (tharg->vip == 0)
+	{
 		enter_normal_client(tharg->id);
-	} else {
-		enter_special_client(tharg->id);
-	}
-	dance(tharg->id, tharg->vip);
+	} else enter_special_client(tharg->id);
+
 	disco_exit(tharg->id, tharg->vip);
 	free(tharg);
 }
@@ -127,51 +125,43 @@ int main(int argc, char *argv[])
 	pthread_attr_t attr;
 	char *filename;
 	int vip;
-	// Compruebo los argumentos por consola
 	if (argc != 2) {
 		perror("Número de argumentos inválido");
 		exit(EXIT_FAILURE);
 	}
 
-
-	// Abro el fichero y lo leo
 	filename = argv[1];
 	FILE *file = fopen(filename, "r");
-	if (file == NULL)
-	{
+	if (file == NULL) {
 		perror("Error opening file");
 		exit(EXIT_FAILURE);
 	}
-	fscanf(file, "%d ", &m);
 
-	// Creo los hilos
+	fscanf(file, "%d ", &m);
 	pthread_t *thid = malloc(sizeof(pthread_t) * m);
 	pthread_attr_init(&attr);
 	for (j = 0; j < m; j++) {
-		// Argumentos del hilo
 		struct tharg *args = malloc(sizeof(struct tharg));
 		if (args == NULL) {
 			perror("Error malloc");
 			fclose(file);
 			exit(EXIT_FAILURE);
 		}
-		args->id = j;
 
-		// Creacion del hilo
+		args->id = j;
 		fscanf(file, "%d ", &vip);
-		args->vip = vip;
-		if (pthread_create(&thid[j], &attr, client, args) != 0)
-		{
+		args->vip = (vip == 0) ? 0 : vip == 1 ? 1 : 2;
+		if (pthread_create(&thid[j], &attr, client, args) != 0) {
 			perror("Error creating thread");
 			free(args);
 			fclose(file);
 			exit(EXIT_FAILURE);
 		}
 	}
+
 	fclose(file);
 
-	for (j = 0; j < m; j++)
-	{
+	for (j = 0; j < m; j++) {
 		pthread_join(thid[j], NULL);
 	}
 	return 0;
