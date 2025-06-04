@@ -8,13 +8,11 @@
 #include <unistd.h>
 
 int printFichero(char* archivo, int nbytes, char* outfile) {
-    char *buf = malloc((sizeof(char) * nbytes) + 1);
-    FILE* file = fopen(archivo, "r+");
+    char *buf = malloc(sizeof(char) * (nbytes + 1));
+    FILE* file = fopen(archivo, "r");
     int len = fread(buf, 1, nbytes, file);
 
     buf[len] = '\0';
-
-    printf("%s\n\n", archivo);
 
     if (outfile != NULL) {
         FILE* fileout = fopen(outfile, "w+");
@@ -45,8 +43,8 @@ int leeDir(char *dirname, int nbytes, char* outfile) {
     while ((next_dir = readdir(dir)) != NULL) {
         if(next_dir->d_type == DT_REG && strcmp(next_dir->d_name, ".") != 0 && strcmp(next_dir->d_name, "..") != 0) {
             char filename[255];
-            snprintf(filename, 255, "./%s", next_dir->d_name);
-            printFichero(filename, nbytes, outfile);
+            snprintf(filename, 255, "%s/%s", dirname, next_dir->d_name);
+            printFichero(next_dir->d_name, nbytes, outfile);
         }
     }
 
@@ -56,17 +54,16 @@ int leeDir(char *dirname, int nbytes, char* outfile) {
 
 int main(int argc, char **argv) {
     int blocks = -1;
-    char outfile[255];
-    char isOutfileSpecified = 0;
+    char* outfile = NULL;
     int opt;
     while ((opt = getopt(argc, argv, "n:o:")) != -1) {
         switch(opt) {
             case 'n':
-            blocks = strtol(optarg, NULL, 10);
-            break;
+                blocks = strtol(optarg, NULL, 10);
+                break;
             case 'o':
-            isOutfileSpecified = 1;
-            snprintf(outfile, sizeof(outfile), "%s", optarg);
+                outfile = malloc(sizeof(char) * 255);
+                snprintf(outfile, sizeof(outfile), "%s", optarg);
             break;
         }
     }
@@ -74,7 +71,11 @@ int main(int argc, char **argv) {
     if (blocks < 0) {
         printf("Se deben especificar un numero mayor a 0 de bytes a mostrar\n");
     } else {
-        leeDir(".", blocks, isOutfileSpecified ? outfile : NULL);
+        leeDir(".", blocks, outfile);
+    }
+    
+    if (outfile != NULL) {
+        free(outfile);
     }
     return 0;
 }
