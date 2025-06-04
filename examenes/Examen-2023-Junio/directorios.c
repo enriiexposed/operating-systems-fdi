@@ -8,35 +8,26 @@
 #include <sys/wait.h>
 #include <bits/getopt_core.h>
 
-void get_entries_of_dir(char* dirname) {
+void get_entries_of_dir(char* dirname, char R) {
     DIR *dir;
     struct dirent *next_dir;
     struct stat sb;
     dir = opendir(dirname);
 
-    if (!dir)
-    {
+    if (!dir) {
         perror("No se ha podido abrir el archivo");
         return;
     }
 
-    printf("%s:\n", dirname);
     while ((next_dir = readdir(dir)) != NULL) {
-        printf("%s\n", next_dir->d_name);
-    }
-
-    printf("\n");
-    rewinddir(dir);
-
-    // print all entries
-    while ((next_dir = readdir(dir)) != NULL) {
-        if (next_dir->d_type == DT_DIR) {
-            if (strcmp(".", next_dir->d_name) != 0 && strcmp("..", next_dir->d_name) != 0) {
-                char path[PATH_MAX];
+        if (strcmp(next_dir->d_name, ".") == 0 && strcmp(next_dir->d_name, "..") == 0) {
+            printf("%s\n", next_dir->d_name);
+            if (R == 1) {
+                char path[256];
                 snprintf(path, sizeof(path), "%s/%s", dirname, next_dir->d_name);
                 pid_t pid = fork();
                 if (pid == 0) {
-                    get_entries_of_dir(path);
+                    get_entries_of_dir(path, R);
                     exit(0);
                 }
                 while (wait(NULL) != -1);
@@ -45,8 +36,6 @@ void get_entries_of_dir(char* dirname) {
     }
 
     closedir(dir);
-
-    // for every sub-directory, print all directories inside of him
 }
 
 
@@ -63,9 +52,7 @@ int main(int argc, char** argv) {
             }
     }
 
-    if (Renable) {
-        get_entries_of_dir(".");
-    }
+    get_entries_of_dir(".", Renable);     
 
     return 0;
 }
