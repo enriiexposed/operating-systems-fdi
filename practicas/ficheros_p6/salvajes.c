@@ -33,12 +33,7 @@ void eat(int id) {
 }
 
 int main(int argc, char *argv[]) {
-    if (argc != 2) {
-        fprintf(stderr, "Uso: %s <id_salvaje>\n", argv[0]);
-        exit(1);
-    }
-
-    int id = getpid(); // Suponemos que el pid que se asigna es único
+    int id = getpid();
 
     int shm_fd = shm_open(SHM_NAME, O_RDWR, 0666);
     if (shm_fd == -1) {
