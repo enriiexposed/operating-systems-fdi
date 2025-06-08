@@ -20,9 +20,9 @@ void get_entries_of_dir(char* dirname, char R) {
     }
 
     while ((next_dir = readdir(dir)) != NULL) {
-        if (strcmp(next_dir->d_name, ".") == 0 && strcmp(next_dir->d_name, "..") == 0) {
+        if (strcmp(next_dir->d_name, ".") != 0 && strcmp(next_dir->d_name, "..") != 0) {
             printf("%s\n", next_dir->d_name);
-            if (R == 1) {
+            if (R == 1 && next_dir->d_type == DT_DIR) {
                 char path[256];
                 snprintf(path, sizeof(path), "%s/%s", dirname, next_dir->d_name);
                 pid_t pid = fork();
