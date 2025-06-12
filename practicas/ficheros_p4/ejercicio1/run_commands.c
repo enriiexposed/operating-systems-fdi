@@ -102,7 +102,7 @@ int main(int argc, char *argv[])
     int cmd_argc;
     int i;
 
-    if (argc != 2)
+    if (argc < 2 && argc > 3)
     {
         fprintf(stderr, "Usage: %s \"command\"\n", argv[0]);
         return EXIT_FAILURE;
@@ -115,7 +115,7 @@ int main(int argc, char *argv[])
     char background = 0;
     int status;
 
-    while ((opt = getopt(argc, argv, "x:s:b")) != NULL)
+    while ((opt = getopt(argc, argv, "x:s:b")) != -1)
     {
         switch (opt)
         {
@@ -142,7 +142,7 @@ int main(int argc, char *argv[])
         }
         else
             printf("Proceso %d terminado con estado %d", pid, status);
-        freeargv(cmd_argv, cmd_argc);
+        free_argv(cmd_argv, cmd_argc);
     }
     else if (scriptfile != NULL)
     {

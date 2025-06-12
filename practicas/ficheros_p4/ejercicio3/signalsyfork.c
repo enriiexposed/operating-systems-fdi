@@ -9,18 +9,36 @@
 #include <signal.h>
 #include <errno.h>
 
-/*programa que temporiza la ejecución de un proceso hijo */
+
+/*
+En este ejercicio vamos a experimentar el envío de señales, haciendo que un proceso cree a un hijo, 
+espere a una señal de un temporizador y, cuando la reciba, termine con la ejecución del hijo.
+
+El programa principal recibirá como argumento el comando del programa que se desea que ejecute el proceso hijo. 
+Si a su vez este comando consta de varios argumentos, estos se pasarán separados por espacios a continuación del nombre del programa a ejecutar.
+
+El proceso padre creará un hijo, que cambiará su ejecutable con una llamada a execvp. 
+A continuación, el padre establecerá que el manejador de la señal SIGALRM sea una función que envíe una señal SIGKILL al proceso hijo 
+y programará una alarma para que le envíe una señal a los 5 segundos. Antes de finalizar, el padre esperará a que finalice el hijo 
+y comprobará la causa por la que ha finalizado el hijo (finalización normal o por recepción de una señal), imprimiendo un mensaje por pantalla.
+*/
+
+/*
+Programa que temporiza la ejecución de un proceso hijo
+*/
 
 pid_t pid;
 
 void* handler(int sig) {
-	printf("Señal SIGALRM\n");	
+	printf("Señal SIGALRM\n");
+	fflush(stdout);
 	kill(pid, SIGKILL);
 }
 
 
 pid_t launch_command(char **argv)
 {
+	pid = fork();
 	if (pid < 0)
 	{
 		perror("Error fork");
@@ -100,8 +118,7 @@ int main(int argc, char **argv)
 	char** cmd_argv;
 	int cmd_argc;
 	int i, status;
-	if (argc < 2)
-	{
+	if (argc < 2) {
 		perror("Nargs insuficiente\n");
 		exit(EXIT_FAILURE);
 	}
@@ -110,24 +127,25 @@ int main(int argc, char **argv)
 
 	pid = launch_command(cmd_argv);
 
-	struct sigaction sa = {0};
+	struct sigaction sa;
 	sa.sa_flags = SA_RESTART;
-	sa.sa_handler = handler;
+	sa.sa_handler = (void*) handler;
 	sigemptyset(&sa.sa_mask);
 	if (sigaction(SIGALRM, &sa, NULL) == -1) {
 		printf("No se ha podido configurar la alarma");
 		exit(EXIT_FAILURE);
 	}
 	alarm(5);
-	if ((pid = waitpid(pid, &status, 0) == -1) ){
+	if (waitpid(pid, &status, 0) == -1) {
 		perror("Error waitpid");
 		exit(EXIT_FAILURE);
 	}
 
 	if (WIFEXITED(status)) {
-		printf("El programa se ejecuto en tiempo\n");
-	} else if(WIFSIGNALED(status)) {
-		printf("El programa no se ejecuto en tiempo\n");
+		printf("El proceso hijo finalizó normalmente (en menos de 5 segundos).\n");
+	} else if (WIFSIGNALED(status)) {
+		printf("El proceso hijo fue terminado por una señal (%d - %s).\n",
+			WTERMSIG(status), strsignal(WTERMSIG(status)));
 	}
 	free_argv(cmd_argv, cmd_argc);
 	return 0;

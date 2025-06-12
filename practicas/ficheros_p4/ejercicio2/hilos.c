@@ -14,7 +14,7 @@ struct tharg
 void *thread_usuario(void *arg)
 {
 	struct tharg *args = (struct tharg*) arg;
-	printf("Thread %d with thread id %d has priority %c", args->i, pthread_self(), args->p);
+	printf("Thread %d with thread id %d has priority %c\n", args->i, pthread_self(), args->p);
 }
 
 int main(int argc, char *argv[])

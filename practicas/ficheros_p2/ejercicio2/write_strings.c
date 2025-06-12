@@ -4,6 +4,11 @@
 #include <err.h>
 int main(int argc, char *argv[])
 {
+	if (argc < 2) {
+		fprintf(stderr, "Usage: <file_name> <strngs> ...\n");
+		exit(EXIT_FAILURE);
+	}
+
 	FILE *file;
 	if ((file = fopen(argv[1], "wb")) == NULL)
 	{
