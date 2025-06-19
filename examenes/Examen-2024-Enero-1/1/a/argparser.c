@@ -7,7 +7,7 @@ int setargs(char* args, char** argv) {
     char* begin_str = args;
 
     // Quitar espacios al principio
-    while(issspace(*it++));
+    while(isspace(*it++));
 
     while(*it != '\0') {
         if (isspace(*it)) {
