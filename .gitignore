@@ -1,3 +1,4 @@
-.vscode
 enunciados
 out
+__pycache__
+*.pyc

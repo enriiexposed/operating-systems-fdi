@@ -1,0 +1,14 @@
+{
+    "files.associations": {
+        "unistd.h": "c",
+        "numbers": "c",
+        "random": "c",
+        "stdio.h": "c",
+        "programa.C": "cpp",
+        "program.C": "cpp",
+        "programA copy.C": "cpp",
+        "programB.C": "cpp",
+        "pthread.h": "c",
+        "sysmacros.h": "c"
+    }
+}

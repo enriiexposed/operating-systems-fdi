@@ -7,7 +7,7 @@ Actualmente hay subidos:
 + Código de ejercicios para que puedas ejecutarlo, actualizado a las hojas de ejerciccios del año 24/25
 + Prácticas resueltas
 + Todos los exámenes prácticos resueltos (los que están disponibles)
-www
+
 > [!WARNING]
 > Seguramente no veas el mejor código de resolución para algunos de los exámenes, se aceptan requests por supuesto:)
 
