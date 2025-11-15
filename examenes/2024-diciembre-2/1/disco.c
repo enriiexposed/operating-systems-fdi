@@ -89,24 +89,24 @@ void *client(void *arg) {
 }
 
 void enter_cleaning() {
-	phtread_mutex_lock(&m);
+	pthread_mutex_lock(&m);
 	while(clients_danced < 3 || nclients > 0) {
 		pthread_cond_wait(&limpieza, &m);
 	}
 	clients_danced = 0;
 	clean_pending = 1;
-	phtread_mutex_unlock(&m);
+	pthread_mutex_unlock(&m);
 }
 
 void exit_cleaning() {
-	phtread_mutex_lock(&m);
+	pthread_mutex_lock(&m);
 	clean_pending = 0;
 	if (vip_waiting > 0) {
 		pthread_cond_broadcast(&queue_vip);
 	} else {
 	    pthread_cond_broadcast(&queue);
 	}
-	phtread_mutex_unlock(&m);
+	pthread_mutex_unlock(&m);
 }
 
 void* cleaning_thread(void* arg){
