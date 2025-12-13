@@ -58,8 +58,8 @@ void list_dir_recurse(char *name)
     struct dirent *next_dir;
 	struct stat sb;
     dir = opendir(name);
-    if (!dir)
-    {
+    if (!dir) 
+	{
         perror("No se ha podido abrir el archivo");
         return;
     }
