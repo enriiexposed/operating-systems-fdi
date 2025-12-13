@@ -117,6 +117,7 @@ int main(int argc, char *argv[]) {
     pthread_join(threads[0], NULL);
     pthread_join(threads[1], NULL);
 
+    // No cerramos los descriptores si son stdin/stdout, esos los cerrará el sistema
     if (in_fd != stdin) fclose(in_fd);
     if (out_fd != stdout) fclose(out_fd);
     return 0;
